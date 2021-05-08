@@ -1,0 +1,40 @@
+name: Testing GitHub PostgreSQL CI
+on: pull_request
+
+jobs:
+  testing:
+    # Run on Linux so that we can run Docker container
+    runs-on: ubuntu-latest
+
+    # Use the ubuntu:latest Docker container to run the job
+    container: ubuntu:latest
+
+    services:
+      postgres:
+        # Use the Postgres v13.1 docker image
+        image: postgres:13.1
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Wait for postgres to have started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on postgres container to the host
+          - 5432:5432
+
+    steps:
+      # Install PostgreSQL client tools
+      - name: Install postgres client
+        run: |
+          apt-get update
+          apt-get install --yes postgresql-client
+
+      # Connect to postgres service container
+      - name: Connect to PostgreSQL running on postgres service container
+        run: psql -h postgres -d postgres -U postgres -c "SELECT NOW()"
+        env:
+          PGPASSWORD: postgres
